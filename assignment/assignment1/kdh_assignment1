@@ -1,0 +1,703 @@
+{
+  "nbformat": 4,
+  "nbformat_minor": 0,
+  "metadata": {
+    "colab": {
+      "name": "Untitled의 사본",
+      "provenance": [],
+      "collapsed_sections": []
+    },
+    "kernelspec": {
+      "name": "python3",
+      "display_name": "Python 3"
+    },
+    "accelerator": "GPU"
+  },
+  "cells": [
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "2kXmZTN66hH3"
+      },
+      "source": [
+        ""
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "2NK9UyrD6ghg",
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 1000
+        },
+        "outputId": "f499419e-cc39-4838-f2b9-7084048c21bb"
+      },
+      "source": [
+        "# All Import Statements Defined Here\n",
+        "# Note: Do not add to this list.\n",
+        "# ----------------\n",
+        "\n",
+        "import sys\n",
+        "assert sys.version_info[0]==3\n",
+        "assert sys.version_info[1] >= 5\n",
+        "\n",
+        "from gensim.models import KeyedVectors\n",
+        "from gensim.test.utils import datapath\n",
+        "import pprint\n",
+        "import matplotlib.pyplot as plt\n",
+        "plt.rcParams['figure.figsize'] = [10, 5]\n",
+        "import nltk\n",
+        "from nltk.corpus import reuters\n",
+        "import numpy as np\n",
+        "import random\n",
+        "import scipy as sp\n",
+        "from sklearn.decomposition import TruncatedSVD\n",
+        "from sklearn.decomposition import PCA\n",
+        "\n",
+        "START_TOKEN = '<START>'\n",
+        "END_TOKEN = '<END>'\n",
+        "\n",
+        "np.random.seed(0)\n",
+        "random.seed(0)\n",
+        "# ----------------\n",
+        "\n",
+        "\n",
+        "#Q1\n",
+        "\n",
+        "def read_corpus(category=\"crude\"):\n",
+        "    \"\"\" Read files from the specified Reuter's category.\n",
+        "        Params:\n",
+        "            category (string): category name\n",
+        "        Return:\n",
+        "            list of lists, with words from each of the processed files\n",
+        "    \"\"\"\n",
+        "    files = reuters.fileids(category)\n",
+        "    return [[START_TOKEN] + [w.lower() for w in list(reuters.words(f))] + [END_TOKEN] for f in files]\n",
+        "\n",
+        "\n",
+        "\n",
+        "reuters_corpus = read_corpus()\n",
+        "pprint.pprint(reuters_corpus[:3], compact=True, width=100)"
+      ],
+      "execution_count": null,
+      "outputs": [
+        {
+          "name": "stdout",
+          "output_type": "stream",
+          "text": [
+            "NLTK Downloader\n",
+            "---------------------------------------------------------------------------\n",
+            "    d) Download   l) List    u) Update   c) Config   h) Help   q) Quit\n",
+            "---------------------------------------------------------------------------\n",
+            "Downloader> d\n",
+            "\n",
+            "Download which package (l=list; x=cancel)?\n",
+            "  Identifier> reuters\n",
+            "    Downloading package reuters to /root/nltk_data...\n",
+            "      Package reuters is already up-to-date!\n",
+            "\n",
+            "---------------------------------------------------------------------------\n",
+            "    d) Download   l) List    u) Update   c) Config   h) Help   q) Quit\n",
+            "---------------------------------------------------------------------------\n",
+            "Downloader> q\n"
+          ]
+        },
+        {
+          "output_type": "error",
+          "ename": "LookupError",
+          "evalue": "ignored",
+          "traceback": [
+            "\u001b[0;31m---------------------------------------------------------------------------\u001b[0m",
+            "\u001b[0;31mLookupError\u001b[0m                               Traceback (most recent call last)",
+            "\u001b[0;32m/usr/local/lib/python3.7/dist-packages/nltk/corpus/util.py\u001b[0m in \u001b[0;36m__load\u001b[0;34m(self)\u001b[0m\n\u001b[1;32m     79\u001b[0m             \u001b[0;32mexcept\u001b[0m \u001b[0mLookupError\u001b[0m \u001b[0;32mas\u001b[0m \u001b[0me\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m---> 80\u001b[0;31m                 \u001b[0;32mtry\u001b[0m\u001b[0;34m:\u001b[0m \u001b[0mroot\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0mnltk\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mdata\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mfind\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0;34m'{}/{}'\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mformat\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mself\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0msubdir\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0mzip_name\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m     81\u001b[0m                 \u001b[0;32mexcept\u001b[0m \u001b[0mLookupError\u001b[0m\u001b[0;34m:\u001b[0m \u001b[0;32mraise\u001b[0m \u001b[0me\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
+            "\u001b[0;32m/usr/local/lib/python3.7/dist-packages/nltk/data.py\u001b[0m in \u001b[0;36mfind\u001b[0;34m(resource_name, paths)\u001b[0m\n\u001b[1;32m    672\u001b[0m     \u001b[0mresource_not_found\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0;34m'\\n%s\\n%s\\n%s\\n'\u001b[0m \u001b[0;34m%\u001b[0m \u001b[0;34m(\u001b[0m\u001b[0msep\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0mmsg\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0msep\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m--> 673\u001b[0;31m     \u001b[0;32mraise\u001b[0m \u001b[0mLookupError\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mresource_not_found\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m    674\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n",
+            "\u001b[0;31mLookupError\u001b[0m: \n**********************************************************************\n  Resource \u001b[93mreuters\u001b[0m not found.\n  Please use the NLTK Downloader to obtain the resource:\n\n  \u001b[31m>>> import nltk\n  >>> nltk.download('reuters')\n  \u001b[0m\n  Searched in:\n    - '/root/nltk_data'\n    - '/usr/share/nltk_data'\n    - '/usr/local/share/nltk_data'\n    - '/usr/lib/nltk_data'\n    - '/usr/local/lib/nltk_data'\n    - '/usr/nltk_data'\n    - '/usr/lib/nltk_data'\n**********************************************************************\n",
+            "\nDuring handling of the above exception, another exception occurred:\n",
+            "\u001b[0;31mLookupError\u001b[0m                               Traceback (most recent call last)",
+            "\u001b[0;32m<ipython-input-4-71aa16522640>\u001b[0m in \u001b[0;36m<module>\u001b[0;34m()\u001b[0m\n\u001b[1;32m     43\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m     44\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m---> 45\u001b[0;31m \u001b[0mreuters_corpus\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0mread_corpus\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m     46\u001b[0m \u001b[0mpprint\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mpprint\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mreuters_corpus\u001b[0m\u001b[0;34m[\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;36m3\u001b[0m\u001b[0;34m]\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0mcompact\u001b[0m\u001b[0;34m=\u001b[0m\u001b[0;32mTrue\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0mwidth\u001b[0m\u001b[0;34m=\u001b[0m\u001b[0;36m100\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
+            "\u001b[0;32m<ipython-input-4-71aa16522640>\u001b[0m in \u001b[0;36mread_corpus\u001b[0;34m(category)\u001b[0m\n\u001b[1;32m     38\u001b[0m             \u001b[0mlist\u001b[0m \u001b[0mof\u001b[0m \u001b[0mlists\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0;32mwith\u001b[0m \u001b[0mwords\u001b[0m \u001b[0;32mfrom\u001b[0m \u001b[0meach\u001b[0m \u001b[0mof\u001b[0m \u001b[0mthe\u001b[0m \u001b[0mprocessed\u001b[0m \u001b[0mfiles\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m     39\u001b[0m     \"\"\"\n\u001b[0;32m---> 40\u001b[0;31m     \u001b[0mfiles\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0mreuters\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mfileids\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mcategory\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m     41\u001b[0m     \u001b[0;32mreturn\u001b[0m \u001b[0;34m[\u001b[0m\u001b[0;34m[\u001b[0m\u001b[0mSTART_TOKEN\u001b[0m\u001b[0;34m]\u001b[0m \u001b[0;34m+\u001b[0m \u001b[0;34m[\u001b[0m\u001b[0mw\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mlower\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0;34m)\u001b[0m \u001b[0;32mfor\u001b[0m \u001b[0mw\u001b[0m \u001b[0;32min\u001b[0m \u001b[0mlist\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mreuters\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mwords\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mf\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m]\u001b[0m \u001b[0;34m+\u001b[0m \u001b[0;34m[\u001b[0m\u001b[0mEND_TOKEN\u001b[0m\u001b[0;34m]\u001b[0m \u001b[0;32mfor\u001b[0m \u001b[0mf\u001b[0m \u001b[0;32min\u001b[0m \u001b[0mfiles\u001b[0m\u001b[0;34m]\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m     42\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n",
+            "\u001b[0;32m/usr/local/lib/python3.7/dist-packages/nltk/corpus/util.py\u001b[0m in \u001b[0;36m__getattr__\u001b[0;34m(self, attr)\u001b[0m\n\u001b[1;32m    114\u001b[0m             \u001b[0;32mraise\u001b[0m \u001b[0mAttributeError\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0;34m\"LazyCorpusLoader object has no attribute '__bases__'\"\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m    115\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m--> 116\u001b[0;31m         \u001b[0mself\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0m__load\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m    117\u001b[0m         \u001b[0;31m# This looks circular, but its not, since __load() changes our\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m    118\u001b[0m         \u001b[0;31m# __class__ to something new:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
+            "\u001b[0;32m/usr/local/lib/python3.7/dist-packages/nltk/corpus/util.py\u001b[0m in \u001b[0;36m__load\u001b[0;34m(self)\u001b[0m\n\u001b[1;32m     79\u001b[0m             \u001b[0;32mexcept\u001b[0m \u001b[0mLookupError\u001b[0m \u001b[0;32mas\u001b[0m \u001b[0me\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m     80\u001b[0m                 \u001b[0;32mtry\u001b[0m\u001b[0;34m:\u001b[0m \u001b[0mroot\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0mnltk\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mdata\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mfind\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0;34m'{}/{}'\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mformat\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mself\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0msubdir\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0mzip_name\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m---> 81\u001b[0;31m                 \u001b[0;32mexcept\u001b[0m \u001b[0mLookupError\u001b[0m\u001b[0;34m:\u001b[0m \u001b[0;32mraise\u001b[0m \u001b[0me\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m     82\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m     83\u001b[0m         \u001b[0;31m# Load the corpus.\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
+            "\u001b[0;32m/usr/local/lib/python3.7/dist-packages/nltk/corpus/util.py\u001b[0m in \u001b[0;36m__load\u001b[0;34m(self)\u001b[0m\n\u001b[1;32m     76\u001b[0m         \u001b[0;32melse\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m     77\u001b[0m             \u001b[0;32mtry\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m---> 78\u001b[0;31m                 \u001b[0mroot\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0mnltk\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mdata\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mfind\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0;34m'{}/{}'\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mformat\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mself\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0msubdir\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0mself\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0m__name\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m     79\u001b[0m             \u001b[0;32mexcept\u001b[0m \u001b[0mLookupError\u001b[0m \u001b[0;32mas\u001b[0m \u001b[0me\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m     80\u001b[0m                 \u001b[0;32mtry\u001b[0m\u001b[0;34m:\u001b[0m \u001b[0mroot\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0mnltk\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mdata\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mfind\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0;34m'{}/{}'\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mformat\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mself\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0msubdir\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0mzip_name\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
+            "\u001b[0;32m/usr/local/lib/python3.7/dist-packages/nltk/data.py\u001b[0m in \u001b[0;36mfind\u001b[0;34m(resource_name, paths)\u001b[0m\n\u001b[1;32m    671\u001b[0m     \u001b[0msep\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0;34m'*'\u001b[0m \u001b[0;34m*\u001b[0m \u001b[0;36m70\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m    672\u001b[0m     \u001b[0mresource_not_found\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0;34m'\\n%s\\n%s\\n%s\\n'\u001b[0m \u001b[0;34m%\u001b[0m \u001b[0;34m(\u001b[0m\u001b[0msep\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0mmsg\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0msep\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m--> 673\u001b[0;31m     \u001b[0;32mraise\u001b[0m \u001b[0mLookupError\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mresource_not_found\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m    674\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m    675\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n",
+            "\u001b[0;31mLookupError\u001b[0m: \n**********************************************************************\n  Resource \u001b[93mreuters\u001b[0m not found.\n  Please use the NLTK Downloader to obtain the resource:\n\n  \u001b[31m>>> import nltk\n  >>> nltk.download('reuters')\n  \u001b[0m\n  Searched in:\n    - '/root/nltk_data'\n    - '/usr/share/nltk_data'\n    - '/usr/local/share/nltk_data'\n    - '/usr/lib/nltk_data'\n    - '/usr/local/lib/nltk_data'\n    - '/usr/nltk_data'\n    - '/usr/lib/nltk_data'\n**********************************************************************\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "sryum4CkD_xK",
+        "outputId": "73200787-66f4-45a1-96c6-b41836ace7cd"
+      },
+      "source": [
+        "#Q.1-1\n",
+        "def distinct_words(corpus):\n",
+        "    \"\"\" Determine a list of distinct words for the corpus.\n",
+        "        Params:\n",
+        "            corpus (list of list of strings): corpus of documents\n",
+        "        Return:\n",
+        "            corpus_words (list of strings): sorted list of distinct words across the corpus\n",
+        "            num_corpus_words (integer): number of distinct words across the corpus\n",
+        "    \"\"\"\n",
+        "    corpus_words = []\n",
+        "    num_corpus_words = -1\n",
+        "    # ------------------\n",
+        "    # Write your implementation here.\n",
+        "    for item in corpus:\n",
+        "      corpus_words=corpus_words+item\n",
+        "\n",
+        "    # ------------------\n",
+        "    corpus_words=sorted(list(set(corpus_words)))\n",
+        "    num_corpus_words=len(corpus_words)\n",
+        "\n",
+        "    return corpus_words, num_corpus_words\n",
+        "\n",
+        "\n",
+        "\n",
+        "  # ---------------------\n",
+        "# Run this sanity check\n",
+        "# Note that this not an exhaustive check for correctness.\n",
+        "# ---------------------\n",
+        "\n",
+        "# Define toy corpus\n",
+        "test_corpus = [\"{} All that glitters isn't gold {}\".format(START_TOKEN, END_TOKEN).split(\" \"), \"{} All's well that ends well {}\".format(START_TOKEN, END_TOKEN).split(\" \")]\n",
+        "\n",
+        "test_corpus_words, num_corpus_words = distinct_words(test_corpus)\n",
+        "\n",
+        "# Correct answers\n",
+        "ans_test_corpus_words = sorted([START_TOKEN, \"All\", \"ends\", \"that\", \"gold\", \"All's\", \"glitters\", \"isn't\", \"well\", END_TOKEN])\n",
+        "ans_num_corpus_words = len(ans_test_corpus_words)\n",
+        "\n",
+        "# Test correct number of words\n",
+        "assert(num_corpus_words == ans_num_corpus_words), \"Incorrect number of distinct words. Correct: {}. Yours: {}\".format(ans_num_corpus_words, num_corpus_words)\n",
+        "\n",
+        "# Test correct words\n",
+        "assert (test_corpus_words == ans_test_corpus_words), \"Incorrect corpus_words.\\nCorrect: {}\\nYours:   {}\".format(str(ans_test_corpus_words), str(test_corpus_words))\n",
+        "\n",
+        "# Print Success\n",
+        "print (\"-\" * 80)\n",
+        "print(\"Passed All Tests!\")\n",
+        "print (\"-\" * 80)"
+      ],
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "--------------------------------------------------------------------------------\n",
+            "Passed All Tests!\n",
+            "--------------------------------------------------------------------------------\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "p3gmXI4wPPYb",
+        "outputId": "6f9c4396-1fe4-41c9-80d4-d7e730a07e63"
+      },
+      "source": [
+        "#Q.1-2.\n",
+        "\n",
+        "def compute_co_occurrence_matrix(corpus, window_size=4):\n",
+        "    \"\"\" Compute co-occurrence matrix for the given corpus and window_size (default of 4).\n",
+        "    \n",
+        "        Note: Each word in a document should be at the center of a window. Words near edges will have a smaller\n",
+        "              number of co-occurring words.\n",
+        "              \n",
+        "              For example, if we take the document \"<START> All that glitters is not gold <END>\" with window size of 4,\n",
+        "              \"All\" will co-occur with \"<START>\", \"that\", \"glitters\", \"is\", and \"not\".\n",
+        "    \n",
+        "        Params:\n",
+        "            corpus (list of list of strings): corpus of documents\n",
+        "            window_size (int): size of context window\n",
+        "        Return:\n",
+        "            M (a symmetric numpy matrix of shape (number of unique words in the corpus , number of unique words in the corpus)): \n",
+        "                Co-occurence matrix of word counts. \n",
+        "                The ordering of the words in the rows/columns should be the same as the ordering of the words given by the distinct_words function.\n",
+        "            word2ind (dict): dictionary that maps word to index (i.e. row/column number) for matrix M.\n",
+        "    \"\"\"\n",
+        "    words, num_words = distinct_words(corpus)\n",
+        "    M = []\n",
+        "    word2ind = {}\n",
+        "    word2list= {}\n",
+        "    # ------------------\n",
+        "    # Write your implementation here.\n",
+        "    for idx in range(0,len(words)):\n",
+        "      word2ind[words[idx]]=idx\n",
+        "\n",
+        "    #corpus[['<START>', 'All', 'that', 'glitters', \"isn't\", 'gold', '<END>'], ['<START>', \"All's\", 'well', 'that', 'ends', 'well', '<END>']]\n",
+        "    #words['<END>', '<START>', 'All', \"All's\", 'ends', 'glitters', 'gold', \"isn't\", 'that', 'well']\n",
+        "\n",
+        "    for idx in range(0,len(words)):\n",
+        "      now=words[idx]\n",
+        "      list_now=[0 for i in range(num_words)]\n",
+        "      word2list[now]=list_now\n",
+        "\n",
+        "    print(word2list)\n",
+        "    for idx in range(0,len(corpus[0])):\n",
+        "      now=corpus[0][idx]\n",
+        "      pos=idx\n",
+        "      start=pos-window_size\n",
+        "      end=pos+window_size\n",
+        "\n",
+        "      for i in range(start,end+1):\n",
+        "        if(i<0 or i>=len(corpus[0]) or idx==i):\n",
+        "          continue;\n",
+        "        word2list[now][word2ind[corpus[0][i]]]+=1\n",
+        "\n",
+        "\n",
+        "    for idx in range(0,len(corpus[1])):\n",
+        "        now=corpus[1][idx]\n",
+        "        pos=idx\n",
+        "        start=pos-window_size\n",
+        "        end=pos+window_size\n",
+        "\n",
+        "        for i in range(start,end+1):\n",
+        "\n",
+        "          if(i<0 or i>=len(corpus[1]) or idx==i):\n",
+        "              continue;\n",
+        "          \n",
+        "          word2list[now][word2ind[corpus[1][i]]]+=1\n",
+        "\n",
+        "\n",
+        "    for key,value in word2list.items():\n",
+        "      M.append(value)\n",
+        "    \n",
+        "    M=np.array(M)\n",
+        "\n",
+        "    # ------------------\n",
+        "    return M, word2ind\n",
+        "\n",
+        "\n",
+        "# ---------------------\n",
+        "# Run this sanity check\n",
+        "# Note that this is not an exhaustive check for correctness.\n",
+        "# ---------------------\n",
+        "\n",
+        "# Define toy corpus and get student's co-occurrence matrix\n",
+        "test_corpus = [\"{} All that glitters isn't gold {}\".format(START_TOKEN, END_TOKEN).split(\" \"), \"{} All's well that ends well {}\".format(START_TOKEN, END_TOKEN).split(\" \")]\n",
+        "M_test, word2ind_test = compute_co_occurrence_matrix(test_corpus, window_size=1)\n",
+        "\n",
+        "# Correct M and word2ind\n",
+        "M_test_ans = np.array( \n",
+        "    [[0., 0., 0., 0., 0., 0., 1., 0., 0., 1.,],\n",
+        "     [0., 0., 1., 1., 0., 0., 0., 0., 0., 0.,],\n",
+        "     [0., 1., 0., 0., 0., 0., 0., 0., 1., 0.,],\n",
+        "     [0., 1., 0., 0., 0., 0., 0., 0., 0., 1.,],\n",
+        "     [0., 0., 0., 0., 0., 0., 0., 0., 1., 1.,],\n",
+        "     [0., 0., 0., 0., 0., 0., 0., 1., 1., 0.,],\n",
+        "     [1., 0., 0., 0., 0., 0., 0., 1., 0., 0.,],\n",
+        "     [0., 0., 0., 0., 0., 1., 1., 0., 0., 0.,],\n",
+        "     [0., 0., 1., 0., 1., 1., 0., 0., 0., 1.,],\n",
+        "     [1., 0., 0., 1., 1., 0., 0., 0., 1., 0.,]]\n",
+        ")\n",
+        "ans_test_corpus_words = sorted([START_TOKEN, \"All\", \"ends\", \"that\", \"gold\", \"All's\", \"glitters\", \"isn't\", \"well\", END_TOKEN])\n",
+        "word2ind_ans = dict(zip(ans_test_corpus_words, range(len(ans_test_corpus_words))))\n",
+        "\n",
+        "# Test correct word2ind\n",
+        "assert (word2ind_ans == word2ind_test), \"Your word2ind is incorrect:\\nCorrect: {}\\nYours: {}\".format(word2ind_ans, word2ind_test)\n",
+        "\n",
+        "# Test correct M shape\n",
+        "assert (M_test.shape == M_test_ans.shape), \"M matrix has incorrect shape.\\nCorrect: {}\\nYours: {}\".format(M_test.shape, M_test_ans.shape)\n",
+        "\n",
+        "# Test correct M values\n",
+        "for w1 in word2ind_ans.keys():\n",
+        "    idx1 = word2ind_ans[w1]\n",
+        "    for w2 in word2ind_ans.keys():\n",
+        "        idx2 = word2ind_ans[w2]\n",
+        "        student = M_test[idx1, idx2]\n",
+        "        correct = M_test_ans[idx1, idx2]\n",
+        "        if student != correct:\n",
+        "            print(\"Correct M:\")\n",
+        "            print(M_test_ans)\n",
+        "            print(\"Your M: \")\n",
+        "            print(M_test)\n",
+        "            raise AssertionError(\"Incorrect count at index ({}, {})=({}, {}) in matrix M. Yours has {} but should have {}.\".format(idx1, idx2, w1, w2, student, correct))\n",
+        "\n",
+        "# Print Success\n",
+        "print (\"-\" * 80)\n",
+        "print(\"Passed All Tests!\")\n",
+        "print (\"-\" * 80)\n",
+        "    #corpus[['<START>', 'All', 'that', 'glitters', \"isn't\", 'gold', '<END>'], ['<START>', \"All's\", 'well', 'that', 'ends', 'well', '<END>']]\n",
+        "    #words['<END>', '<START>', 'All', \"All's\", 'ends', 'glitters', 'gold', \"isn't\", 'that', 'well']"
+      ],
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "{'<END>': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], '<START>': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 'All': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], \"All's\": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 'ends': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 'glitters': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 'gold': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], \"isn't\": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 'that': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 'well': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}\n",
+            "--------------------------------------------------------------------------------\n",
+            "Passed All Tests!\n",
+            "--------------------------------------------------------------------------------\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "7XhfvGiq9aSL",
+        "outputId": "1baf8072-bbbf-4cc6-e86c-bc46bced94a8"
+      },
+      "source": [
+        "#Q.1-3\n",
+        "\n",
+        "def reduce_to_k_dim(M, k=2):\n",
+        "    \"\"\" Reduce a co-occurence count matrix of dimensionality (num_corpus_words, num_corpus_words)\n",
+        "        to a matrix of dimensionality (num_corpus_words, k) using the following SVD function from Scikit-Learn:\n",
+        "            - http://scikit-learn.org/stable/modules/generated/sklearn.decomposition.TruncatedSVD.html\n",
+        "    \n",
+        "        Params:\n",
+        "            M (numpy matrix of shape (number of corpus words, number of corpus words)): co-occurence matrix of word counts\n",
+        "            k (int): embedding size of each word after dimension reduction\n",
+        "        Return:\n",
+        "            M_reduced (numpy matrix of shape (number of corpus words, k)): matrix of k-dimensioal word embeddings.\n",
+        "                    In terms of the SVD from math class, this actually returns U * S\n",
+        "    \"\"\"    \n",
+        "    n_iters = 10     # Use this parameter in your call to `TruncatedSVD`\n",
+        "    M_reduced = None\n",
+        "    print(\"Running Truncated SVD over %i words...\" % (M.shape[0]))\n",
+        "    \n",
+        "        # ------------------\n",
+        "        # Write your implementation here.\n",
+        "    svd = TruncatedSVD(n_components=k, n_iter=n_iters)\n",
+        "    M_reduced = svd.fit_transform(M)\n",
+        "    \n",
+        "        # ------------------\n",
+        "\n",
+        "    print(\"Done.\")\n",
+        "    return M_reduced\n",
+        "\n",
+        "# ---------------------\n",
+        "# Run this sanity check\n",
+        "# Note that this not an exhaustive check for correctness \n",
+        "# In fact we only check that your M_reduced has the right dimensions.\n",
+        "# ---------------------\n",
+        "\n",
+        "# Define toy corpus and run student code\n",
+        "test_corpus = [\"START All that glitters isn't gold END\".split(\" \"), \"START All's well that ends well END\".split(\" \")]\n",
+        "M_test, word2Ind_test = compute_co_occurrence_matrix(test_corpus, window_size=1)\n",
+        "M_test_reduced = reduce_to_k_dim(M_test, k=2)\n",
+        "\n",
+        "# Test proper dimensions\n",
+        "assert (M_test_reduced.shape[0] == 10), \"M_reduced has {} rows; should have {}\".format(M_test_reduced.shape[0], 10)\n",
+        "assert (M_test_reduced.shape[1] == 2), \"M_reduced has {} columns; should have {}\".format(M_test_reduced.shape[1], 2)\n",
+        "\n",
+        "# Print Success\n",
+        "print (\"-\" * 80)\n",
+        "print(\"Passed All Tests!\")\n",
+        "print (\"-\" * 80)"
+      ],
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "{'All': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], \"All's\": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 'END': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 'START': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 'ends': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 'glitters': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 'gold': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], \"isn't\": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 'that': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 'well': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}\n",
+            "Running Truncated SVD over 10 words...\n",
+            "Done.\n",
+            "--------------------------------------------------------------------------------\n",
+            "Passed All Tests!\n",
+            "--------------------------------------------------------------------------------\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 371
+        },
+        "id": "F_hZvmUJCa5q",
+        "outputId": "d6d7e2e0-aa48-40c1-da50-16fdff736898"
+      },
+      "source": [
+        "#Q.1-4\n",
+        "\n",
+        "def plot_embeddings(M_reduced, word2ind, words):\n",
+        "    \"\"\" Plot in a scatterplot the embeddings of the words specified in the list \"words\".\n",
+        "        NOTE: do not plot all the words listed in M_reduced / word2ind.\n",
+        "        Include a label next to each point.\n",
+        "        \n",
+        "        Params:\n",
+        "            M_reduced (numpy matrix of shape (number of unique words in the corpus , 2)): matrix of 2-dimensioal word embeddings\n",
+        "            word2ind (dict): dictionary that maps word to indices for matrix M\n",
+        "            words (list of strings): words whose embeddings we want to visualize\n",
+        "    \"\"\"\n",
+        "\n",
+        "    # ------------------\n",
+        "    # Write your implementation here.\n",
+        "    for i in range(0,len(words)):\n",
+        "        plt.scatter(M_reduced[i][0], M_reduced[i][1], marker='x', color='red')\n",
+        "        plt.text(M_reduced[i][0], M_reduced[i][1], words[i], fontsize=9)\n",
+        "    plt.show()\n",
+        "    # ------------------\n",
+        "\n",
+        "# ---------------------\n",
+        "# Run this sanity check\n",
+        "# Note that this is not an exhaustive check for correctness.\n",
+        "# The plot produced should look like the \"test solution plot\" depicted below. \n",
+        "# ---------------------\n",
+        "\n",
+        "print (\"-\" * 80)\n",
+        "print (\"Outputted Plot:\")\n",
+        "\n",
+        "M_reduced_plot_test = np.array([[1, 1], [-1, -1], [1, -1], [-1, 1], [0, 0]])\n",
+        "word2ind_plot_test = {'test1': 0, 'test2': 1, 'test3': 2, 'test4': 3, 'test5': 4}\n",
+        "words = ['test1', 'test2', 'test3', 'test4', 'test5']\n",
+        "plot_embeddings(M_reduced_plot_test, word2ind_plot_test, words)\n",
+        "\n",
+        "print (\"-\" * 80)"
+      ],
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "--------------------------------------------------------------------------------\n",
+            "Outputted Plot:\n"
+          ]
+        },
+        {
+          "output_type": "display_data",
+          "data": {
+            "image/png": "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\n",
+            "text/plain": [
+              "<Figure size 720x360 with 1 Axes>"
+            ]
+          },
+          "metadata": {
+            "needs_background": "light"
+          }
+        },
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "--------------------------------------------------------------------------------\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "upkHgIcXhkQq",
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 1000
+        },
+        "outputId": "0821f086-862f-48cf-c1d2-59262898c144"
+      },
+      "source": [
+        "# -----------------------------\n",
+        "# Run This Cell to Produce Your Plot\n",
+        "# ------------------------------\n",
+        "nltk.download()\n",
+        "reuters_corpus = read_corpus()\n",
+        "M_co_occurrence, word2ind_co_occurrence = compute_co_occurrence_matrix(reuters_corpus)\n",
+        "M_reduced_co_occurrence = reduce_to_k_dim(M_co_occurrence, k=2)\n",
+        "\n",
+        "# Rescale (normalize) the rows to make them each of unit-length\n",
+        "M_lengths = np.linalg.norm(M_reduced_co_occurrence, axis=1)\n",
+        "M_normalized = M_reduced_co_occurrence / M_lengths[:, np.newaxis] # broadcasting\n",
+        "\n",
+        "words = ['barrels', 'bpd', 'ecuador', 'energy', 'industry', 'kuwait', 'oil', 'output', 'petroleum', 'iraq']\n",
+        "\n",
+        "plot_embeddings(M_normalized, word2ind_co_occurrence, words)"
+      ],
+      "execution_count": null,
+      "outputs": [
+        {
+          "name": "stdout",
+          "output_type": "stream",
+          "text": [
+            "NLTK Downloader\n",
+            "---------------------------------------------------------------------------\n",
+            "    d) Download   l) List    u) Update   c) Config   h) Help   q) Quit\n",
+            "---------------------------------------------------------------------------\n",
+            "Downloader> d\n",
+            "\n",
+            "Download which package (l=list; x=cancel)?\n",
+            "  Identifier> reuters\n",
+            "    Downloading package reuters to /root/nltk_data...\n",
+            "      Package reuters is already up-to-date!\n",
+            "\n",
+            "---------------------------------------------------------------------------\n",
+            "    d) Download   l) List    u) Update   c) Config   h) Help   q) Quit\n",
+            "---------------------------------------------------------------------------\n",
+            "Downloader> q\n"
+          ]
+        },
+        {
+          "output_type": "error",
+          "ename": "LookupError",
+          "evalue": "ignored",
+          "traceback": [
+            "\u001b[0;31m---------------------------------------------------------------------------\u001b[0m",
+            "\u001b[0;31mLookupError\u001b[0m                               Traceback (most recent call last)",
+            "\u001b[0;32m/usr/local/lib/python3.7/dist-packages/nltk/corpus/util.py\u001b[0m in \u001b[0;36m__load\u001b[0;34m(self)\u001b[0m\n\u001b[1;32m     79\u001b[0m             \u001b[0;32mexcept\u001b[0m \u001b[0mLookupError\u001b[0m \u001b[0;32mas\u001b[0m \u001b[0me\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m---> 80\u001b[0;31m                 \u001b[0;32mtry\u001b[0m\u001b[0;34m:\u001b[0m \u001b[0mroot\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0mnltk\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mdata\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mfind\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0;34m'{}/{}'\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mformat\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mself\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0msubdir\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0mzip_name\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m     81\u001b[0m                 \u001b[0;32mexcept\u001b[0m \u001b[0mLookupError\u001b[0m\u001b[0;34m:\u001b[0m \u001b[0;32mraise\u001b[0m \u001b[0me\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
+            "\u001b[0;32m/usr/local/lib/python3.7/dist-packages/nltk/data.py\u001b[0m in \u001b[0;36mfind\u001b[0;34m(resource_name, paths)\u001b[0m\n\u001b[1;32m    672\u001b[0m     \u001b[0mresource_not_found\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0;34m'\\n%s\\n%s\\n%s\\n'\u001b[0m \u001b[0;34m%\u001b[0m \u001b[0;34m(\u001b[0m\u001b[0msep\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0mmsg\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0msep\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m--> 673\u001b[0;31m     \u001b[0;32mraise\u001b[0m \u001b[0mLookupError\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mresource_not_found\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m    674\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n",
+            "\u001b[0;31mLookupError\u001b[0m: \n**********************************************************************\n  Resource \u001b[93mreuters\u001b[0m not found.\n  Please use the NLTK Downloader to obtain the resource:\n\n  \u001b[31m>>> import nltk\n  >>> nltk.download('reuters')\n  \u001b[0m\n  Searched in:\n    - '/root/nltk_data'\n    - '/usr/share/nltk_data'\n    - '/usr/local/share/nltk_data'\n    - '/usr/lib/nltk_data'\n    - '/usr/local/lib/nltk_data'\n    - '/usr/nltk_data'\n    - '/usr/lib/nltk_data'\n**********************************************************************\n",
+            "\nDuring handling of the above exception, another exception occurred:\n",
+            "\u001b[0;31mLookupError\u001b[0m                               Traceback (most recent call last)",
+            "\u001b[0;32m<ipython-input-11-c0397353ff57>\u001b[0m in \u001b[0;36m<module>\u001b[0;34m()\u001b[0m\n\u001b[1;32m      3\u001b[0m \u001b[0;31m# ------------------------------\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m      4\u001b[0m \u001b[0mnltk\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mdownload\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m----> 5\u001b[0;31m \u001b[0mreuters_corpus\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0mread_corpus\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m      6\u001b[0m \u001b[0mM_co_occurrence\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0mword2ind_co_occurrence\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0mcompute_co_occurrence_matrix\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mreuters_corpus\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m      7\u001b[0m \u001b[0mM_reduced_co_occurrence\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0mreduce_to_k_dim\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mM_co_occurrence\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0mk\u001b[0m\u001b[0;34m=\u001b[0m\u001b[0;36m2\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
+            "\u001b[0;32m<ipython-input-4-71aa16522640>\u001b[0m in \u001b[0;36mread_corpus\u001b[0;34m(category)\u001b[0m\n\u001b[1;32m     38\u001b[0m             \u001b[0mlist\u001b[0m \u001b[0mof\u001b[0m \u001b[0mlists\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0;32mwith\u001b[0m \u001b[0mwords\u001b[0m \u001b[0;32mfrom\u001b[0m \u001b[0meach\u001b[0m \u001b[0mof\u001b[0m \u001b[0mthe\u001b[0m \u001b[0mprocessed\u001b[0m \u001b[0mfiles\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m     39\u001b[0m     \"\"\"\n\u001b[0;32m---> 40\u001b[0;31m     \u001b[0mfiles\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0mreuters\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mfileids\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mcategory\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m     41\u001b[0m     \u001b[0;32mreturn\u001b[0m \u001b[0;34m[\u001b[0m\u001b[0;34m[\u001b[0m\u001b[0mSTART_TOKEN\u001b[0m\u001b[0;34m]\u001b[0m \u001b[0;34m+\u001b[0m \u001b[0;34m[\u001b[0m\u001b[0mw\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mlower\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0;34m)\u001b[0m \u001b[0;32mfor\u001b[0m \u001b[0mw\u001b[0m \u001b[0;32min\u001b[0m \u001b[0mlist\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mreuters\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mwords\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mf\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m]\u001b[0m \u001b[0;34m+\u001b[0m \u001b[0;34m[\u001b[0m\u001b[0mEND_TOKEN\u001b[0m\u001b[0;34m]\u001b[0m \u001b[0;32mfor\u001b[0m \u001b[0mf\u001b[0m \u001b[0;32min\u001b[0m \u001b[0mfiles\u001b[0m\u001b[0;34m]\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m     42\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n",
+            "\u001b[0;32m/usr/local/lib/python3.7/dist-packages/nltk/corpus/util.py\u001b[0m in \u001b[0;36m__getattr__\u001b[0;34m(self, attr)\u001b[0m\n\u001b[1;32m    114\u001b[0m             \u001b[0;32mraise\u001b[0m \u001b[0mAttributeError\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0;34m\"LazyCorpusLoader object has no attribute '__bases__'\"\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m    115\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m--> 116\u001b[0;31m         \u001b[0mself\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0m__load\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m    117\u001b[0m         \u001b[0;31m# This looks circular, but its not, since __load() changes our\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m    118\u001b[0m         \u001b[0;31m# __class__ to something new:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
+            "\u001b[0;32m/usr/local/lib/python3.7/dist-packages/nltk/corpus/util.py\u001b[0m in \u001b[0;36m__load\u001b[0;34m(self)\u001b[0m\n\u001b[1;32m     79\u001b[0m             \u001b[0;32mexcept\u001b[0m \u001b[0mLookupError\u001b[0m \u001b[0;32mas\u001b[0m \u001b[0me\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m     80\u001b[0m                 \u001b[0;32mtry\u001b[0m\u001b[0;34m:\u001b[0m \u001b[0mroot\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0mnltk\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mdata\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mfind\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0;34m'{}/{}'\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mformat\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mself\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0msubdir\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0mzip_name\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m---> 81\u001b[0;31m                 \u001b[0;32mexcept\u001b[0m \u001b[0mLookupError\u001b[0m\u001b[0;34m:\u001b[0m \u001b[0;32mraise\u001b[0m \u001b[0me\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m     82\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m     83\u001b[0m         \u001b[0;31m# Load the corpus.\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
+            "\u001b[0;32m/usr/local/lib/python3.7/dist-packages/nltk/corpus/util.py\u001b[0m in \u001b[0;36m__load\u001b[0;34m(self)\u001b[0m\n\u001b[1;32m     76\u001b[0m         \u001b[0;32melse\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m     77\u001b[0m             \u001b[0;32mtry\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m---> 78\u001b[0;31m                 \u001b[0mroot\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0mnltk\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mdata\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mfind\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0;34m'{}/{}'\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mformat\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mself\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0msubdir\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0mself\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0m__name\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m     79\u001b[0m             \u001b[0;32mexcept\u001b[0m \u001b[0mLookupError\u001b[0m \u001b[0;32mas\u001b[0m \u001b[0me\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m     80\u001b[0m                 \u001b[0;32mtry\u001b[0m\u001b[0;34m:\u001b[0m \u001b[0mroot\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0mnltk\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mdata\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mfind\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0;34m'{}/{}'\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mformat\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mself\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0msubdir\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0mzip_name\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
+            "\u001b[0;32m/usr/local/lib/python3.7/dist-packages/nltk/data.py\u001b[0m in \u001b[0;36mfind\u001b[0;34m(resource_name, paths)\u001b[0m\n\u001b[1;32m    671\u001b[0m     \u001b[0msep\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0;34m'*'\u001b[0m \u001b[0;34m*\u001b[0m \u001b[0;36m70\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m    672\u001b[0m     \u001b[0mresource_not_found\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0;34m'\\n%s\\n%s\\n%s\\n'\u001b[0m \u001b[0;34m%\u001b[0m \u001b[0;34m(\u001b[0m\u001b[0msep\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0mmsg\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0msep\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m--> 673\u001b[0;31m     \u001b[0;32mraise\u001b[0m \u001b[0mLookupError\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mresource_not_found\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m    674\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m    675\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n",
+            "\u001b[0;31mLookupError\u001b[0m: \n**********************************************************************\n  Resource \u001b[93mreuters\u001b[0m not found.\n  Please use the NLTK Downloader to obtain the resource:\n\n  \u001b[31m>>> import nltk\n  >>> nltk.download('reuters')\n  \u001b[0m\n  Searched in:\n    - '/root/nltk_data'\n    - '/usr/share/nltk_data'\n    - '/usr/local/share/nltk_data'\n    - '/usr/lib/nltk_data'\n    - '/usr/local/lib/nltk_data'\n    - '/usr/nltk_data'\n    - '/usr/lib/nltk_data'\n**********************************************************************\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "kWo4xpF12P98",
+        "outputId": "2fde5511-3359-425b-d279-956e19f4290c"
+      },
+      "source": [
+        "#Q.2\n",
+        "def load_embedding_model():\n",
+        "    \"\"\" Load GloVe Vectors\n",
+        "        Return:\n",
+        "            wv_from_bin: All 400000 embeddings, each lengh 200\n",
+        "    \"\"\"\n",
+        "    import gensim.downloader as api\n",
+        "    wv_from_bin = api.load(\"glove-wiki-gigaword-200\")\n",
+        "    print(\"Loaded vocab size %i\" % len(wv_from_bin.vocab.keys()))\n",
+        "    return wv_from_bin\n",
+        "\n",
+        "    # -----------------------------------\n",
+        "# Run Cell to Load Word Vectors\n",
+        "# Note: This will take a couple minutes\n",
+        "# -----------------------------------\n",
+        "wv_from_bin = load_embedding_model()"
+      ],
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "[==================================================] 100.0% 252.1/252.1MB downloaded\n",
+            "Loaded vocab size 400000\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "ZnmNk3gcAOW1",
+        "outputId": "e84154fd-022e-4000-ad01-11c0fae10cf0"
+      },
+      "source": [
+        "#Q.2\n",
+        "\n",
+        "def get_matrix_of_vectors(wv_from_bin, required_words=['barrels', 'bpd', 'ecuador', 'energy', 'industry', 'kuwait', 'oil', 'output', 'petroleum', 'iraq']):\n",
+        "    \"\"\" Put the GloVe vectors into a matrix M.\n",
+        "        Param:\n",
+        "            wv_from_bin: KeyedVectors object; the 400000 GloVe vectors loaded from file\n",
+        "        Return:\n",
+        "            M: numpy matrix shape (num words, 200) containing the vectors\n",
+        "            word2ind: dictionary mapping each word to its row number in M\n",
+        "    \"\"\"\n",
+        "    import random\n",
+        "    words = list(wv_from_bin.vocab.keys())\n",
+        "    print(\"Shuffling words ...\")\n",
+        "    random.seed(224)\n",
+        "    random.shuffle(words)\n",
+        "    words = words[:10000]\n",
+        "    print(\"Putting %i words into word2ind and matrix M...\" % len(words))\n",
+        "    word2ind = {}\n",
+        "    M = []\n",
+        "    curInd = 0\n",
+        "    for w in words:\n",
+        "        try:\n",
+        "            M.append(wv_from_bin.word_vec(w))\n",
+        "            word2ind[w] = curInd\n",
+        "            curInd += 1\n",
+        "        except KeyError:\n",
+        "            continue\n",
+        "    for w in required_words:\n",
+        "        if w in words:\n",
+        "            continue\n",
+        "        try:\n",
+        "            M.append(wv_from_bin.word_vec(w))\n",
+        "            word2ind[w] = curInd\n",
+        "            curInd += 1\n",
+        "        except KeyError:\n",
+        "            continue\n",
+        "    M = np.stack(M)\n",
+        "    print(\"Done.\")\n",
+        "    return M, word2ind\n",
+        "\n",
+        "# -----------------------------------------------------------------\n",
+        "# Run Cell to Reduce 200-Dimensional Word Embeddings to k Dimensions\n",
+        "# Note: This should be quick to run\n",
+        "# -----------------------------------------------------------------\n",
+        "M, word2ind = get_matrix_of_vectors(wv_from_bin)\n",
+        "M_reduced = reduce_to_k_dim(M, k=2)\n",
+        "\n",
+        "# Rescale (normalize) the rows to make them each of unit-length\n",
+        "M_lengths = np.linalg.norm(M_reduced, axis=1)\n",
+        "M_reduced_normalized = M_reduced / M_lengths[:, np.newaxis] # broadcasting"
+      ],
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Shuffling words ...\n",
+            "Putting 10000 words into word2ind and matrix M...\n",
+            "Done.\n",
+            "Running Truncated SVD over 10010 words...\n",
+            "Done.\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "Pl0-ODKQAmUq"
+      },
+      "source": [
+        "#Q.2-1\n"
+      ],
+      "execution_count": null,
+      "outputs": []
+    }
+  ]
+}
